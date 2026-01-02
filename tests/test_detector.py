@@ -3,6 +3,7 @@ import tempfile
 import unittest
 
 from text_only_scanner.detector import is_text_file, filter_text_files
+import base64
 
 
 class DetectorTests(unittest.TestCase):
@@ -49,6 +50,19 @@ class DetectorTests(unittest.TestCase):
         finally:
             os.remove(t.name)
             os.remove(b.name)
+
+    def test_encrypted_like_printable(self):
+        # Create printable but high-entropy data (base64 of random bytes)
+        random_bytes = os.urandom(2048)
+        printable = base64.b64encode(random_bytes)
+        with tempfile.NamedTemporaryFile("wb", delete=False) as f:
+            f.write(printable)
+            path = f.name
+        try:
+            # Should be rejected as encrypted/unreadable despite being printable
+            self.assertFalse(is_text_file(path))
+        finally:
+            os.remove(path)
 
 
 if __name__ == "__main__":

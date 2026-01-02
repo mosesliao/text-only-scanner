@@ -1,5 +1,7 @@
 from typing import Iterable, List, Tuple
 import os
+import math
+from collections import Counter
 
 # A conservative set of bytes considered "text" (ASCII printable + common whitespace)
 _TEXT_BYTES = bytes(range(32, 127)) + b"\n\r\t\f\v"
@@ -40,7 +42,50 @@ def is_text_file(path: str, blocksize: int = 8192, nontext_threshold: float = 0.
             ctrl_count += 1
 
     ratio = ctrl_count / len(sample)
-    return ratio <= nontext_threshold
+    if ratio > nontext_threshold:
+        return False
+
+    # Additional heuristics to detect encrypted or unreadable-but-printable data.
+    # Compute printable fraction and letter/whitespace fraction.
+    printable_count = 0
+    letter_or_space_count = 0
+    for b in sample:
+        if 32 <= b < 127 or b in (9, 10, 13):
+            printable_count += 1
+        # ASCII letters (A-Z, a-z) and common whitespace
+        if (65 <= b <= 90) or (97 <= b <= 122) or b in (32, 9, 10, 13):
+            letter_or_space_count += 1
+
+    printable_ratio = printable_count / len(sample)
+    letter_ratio = letter_or_space_count / len(sample)
+
+    # Shannon entropy (bits per byte)
+    def _shannon_entropy(data: bytes) -> float:
+        if not data:
+            return 0.0
+        counts = Counter(data)
+        length = len(data)
+        ent = 0.0
+        for c in counts.values():
+            p = c / length
+            ent -= p * math.log2(p)
+        return ent
+
+    entropy = _shannon_entropy(sample)
+
+    # Heuristics:
+    # - If the sample is mostly printable but entropy is very high, it's likely
+    #   encoded/encrypted data (e.g. base64 of ciphertext) and should be rejected.
+    # - If the sample is printable but contains few alphabetic characters, it's
+    #   probably unreadable text (e.g. hex dumps, encoded blobs) and should be rejected.
+    # Lowered entropy threshold to catch common encodings (e.g. base64 of ciphertext)
+    if printable_ratio >= 0.9 and entropy > 5.5:
+        return False
+
+    if printable_ratio >= 0.8 and letter_ratio < 0.6:
+        return False
+
+    return True
 
 
 def filter_text_files(paths: Iterable[str]) -> Tuple[List[str], List[str]]:

@@ -1,12 +1,26 @@
-# Text only scanner
-This plugin reads and scans all the files in a particular folder and will flag out files that contains outside alpha-numeric keyboard charaters or binary files. 
+# Text Only Scanner 📝🔍
 
-## Objective
-The objective of this library is to ensure only text based files that are readable to the human eyes get pass through the tests and fails everything else.
+`text_only_scanner` helps teams ensure only human-readable text files pass validation. It
+scans files (or directories) and rejects anything editors would struggle to open or read —
+including binary files, files containing many control characters, and printable-but-high-entropy
+blobs (e.g., encoded/encrypted payloads). 🚫🔒
+
+## Objective 🎯
+
+Prevent non-human-readable files from slipping into pipelines or tests. The library flags
+files that are likely binary, contain unusual control characters, or appear to be encoded
+or encrypted text that isn't meant to be read directly. This keeps downstream tooling and
+review processes clean and predictable. ✅
+
+## Use Cases
+
+- Detect accidental binary outputs in repositories and CI. 🧪
+- Block files that hide encoded/encrypted content where plain text is expected. 🔐
+- Serve as a pre-commit or CI gate to ensure artifacts are text-friendly. ⛔️➡️✅
 
 ## Usage
 
-You can use the library from Python::
+From Python:
 
 ```py
 from text_only_scanner.detector import is_text_file, filter_text_files
@@ -18,7 +32,7 @@ print("accepted:", accepted)
 print("rejected:", rejected)
 ```
 
-Or use the CLI entrypoint::
+Command-line (module):
 
 ```bash
 python -m text_only_scanner.cli file1.txt file2.bin
@@ -26,9 +40,9 @@ python -m text_only_scanner.cli file1.txt file2.bin
 ```
 
 Notes:
-- The detector uses a conservative heuristic (NUL bytes and control-character ratio) to
-	decide whether a file is text. It is designed to match common editor behavior and is
-	fast and dependency-free.
+- The detector combines several heuristics: NUL bytes, control-character ratios, printable
+	vs letter ratios, and Shannon entropy to identify suspicious files. It is conservative —
+	intended to reduce false negatives while keeping false positives low. ⚖️
 
 Recursive usage:
 
