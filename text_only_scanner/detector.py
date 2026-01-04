@@ -1,7 +1,7 @@
 from typing import Iterable, List, Tuple
 import os
 import math
- import re
+import re
 from collections import Counter
 
 # A conservative set of bytes considered "text" (ASCII printable + common whitespace)
