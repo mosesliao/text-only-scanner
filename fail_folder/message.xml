@@ -1,0 +1,16 @@
+<secureMessage>
+    <origin>auth-service-01</origin>
+    <destination>payment-gateway</destination>
+    <sender>system-service</sender>
+    <recipient>user123</recipient>
+    <timestamp>2026-01-02T16:45:30+08:00</timestamp>
+    <encryption>
+        <algorithm>AES-256-CBC</algorithm>
+        <encoding>base64</encoding>
+    </encryption>
+    <ciphertext>
+        U2FsdGVkX1+vK0FJZzYxT1pPZ0N2T2pZbUxBZE9ZSm9pV2V6
+        Rkp2dW9oZ1J3Z3p3Q1FjQnF6MWJjN0p1c1JRT0ZCdkxZTG1Y
+        Y3FzQndxR0Z5Qmt0TkpFQkZJZUt5aTh4d0xKdkV3bWh6T2xN
+    </ciphertext>
+</secureMessage>

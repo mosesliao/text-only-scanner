@@ -1,13 +1,26 @@
 from typing import Iterable, List, Tuple
 import os
 import math
+ import re
 from collections import Counter
 
 # A conservative set of bytes considered "text" (ASCII printable + common whitespace)
 _TEXT_BYTES = bytes(range(32, 127)) + b"\n\r\t\f\v"
 
+# Regex patterns for ciphertext-like content (base64, hex-encoded)
+_BASE64_PATTERN = re.compile(r'^[A-Za-z0-9+/]{44,}={0,2}$')  # Base64 with min length
+_HEX_PATTERN = re.compile(r'^[0-9A-Fa-f]{32,}$')  # Hex with min length
 
-def is_text_file(path: str, blocksize: int = 8192, nontext_threshold: float = 0.30) -> bool:
+
+def _is_ciphertext_line(line: str) -> bool:
+    """Return True if a line looks like base64 or hex-encoded ciphertext."""
+    stripped = line.strip()
+    if not stripped or len(stripped) < 16:
+        return False
+    return bool(_BASE64_PATTERN.match(stripped)) or bool(_HEX_PATTERN.match(stripped))
+
+
+def is_text_file(path: str, blocksize: int = 8192, nontext_threshold: float = 0.30, ciphertext_threshold: float = 0.2) -> bool:
     """Return True if *path* looks like a text file.
 
     Heuristic used:
@@ -16,6 +29,9 @@ def is_text_file(path: str, blocksize: int = 8192, nontext_threshold: float = 0.
     - If the sample contains a NUL byte -> False (very likely binary)
     - Count control characters (bytes < 32) excluding common whitespace; if their
       fraction exceeds *nontext_threshold* the file is treated as binary.
+    - Check for lines that look like ciphertext (base64/hex); if the fraction exceeds
+      *ciphertext_threshold*, treat as non-text (e.g., encrypted payloads in XML).
+    - Analyze entropy and letter ratios to catch encoded/encrypted blobs.
 
     This approach is pragmatic and matches common editor heuristics for distinguishing
     text vs binary files.
@@ -44,6 +60,18 @@ def is_text_file(path: str, blocksize: int = 8192, nontext_threshold: float = 0.
     ratio = ctrl_count / len(sample)
     if ratio > nontext_threshold:
         return False
+
+    # Line-by-line ciphertext detection: check for base64/hex patterns
+    try:
+        sample_text = sample.decode('utf-8', errors='ignore')
+        lines = sample_text.split('\n')
+        ciphertext_lines = sum(1 for line in lines if _is_ciphertext_line(line))
+        if lines:
+            ciphertext_ratio = ciphertext_lines / len(lines)
+            if ciphertext_ratio >= ciphertext_threshold:
+                return False
+    except Exception:
+        pass
 
     # Additional heuristics to detect encrypted or unreadable-but-printable data.
     # Compute printable fraction and letter/whitespace fraction.
@@ -86,6 +114,7 @@ def is_text_file(path: str, blocksize: int = 8192, nontext_threshold: float = 0.
         return False
 
     return True
+
 
 
 def filter_text_files(paths: Iterable[str]) -> Tuple[List[str], List[str]]:
