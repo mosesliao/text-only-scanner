@@ -16,7 +16,8 @@ review processes clean and predictable. ✅
 
 - Detect accidental binary outputs in repositories and CI. 🧪
 - Block files that hide encoded/encrypted content where plain text is expected. 🔐
-- Serve as a pre-commit or CI gate to ensure artifacts are text-friendly. ⛔️➡️✅
+- Serve as a pre-commit or CI gate to ensure only code are in the pipeline
+, not access/secret keys or tokens or binary files. ⛔️➡️✅
 
 ## Usage
 
@@ -40,9 +41,10 @@ python -m text_only_scanner.cli file1.txt file2.bin
 ```
 
 Notes:
+
 - The detector combines several heuristics: NUL bytes, control-character ratios, printable
-	vs letter ratios, and Shannon entropy to identify suspicious files. It is conservative —
-	intended to reduce false negatives while keeping false positives low. ⚖️
+ vs letter ratios, and Shannon entropy to identify suspicious files. It is conservative —
+ intended to reduce false negatives while keeping false positives low. ⚖️
 
 Recursive usage:
 
