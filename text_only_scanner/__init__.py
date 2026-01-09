@@ -6,4 +6,4 @@ __all__ = ["is_text_file", "filter_text_files"]
 
 from .detector import is_text_file, filter_text_files
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"
